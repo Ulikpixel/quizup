@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const { Schema, Types } = mongoose;
+const { Schema, SchemaTypes, model } = mongoose;
 
 const Ask = new Schema({
     id: { type: Number, required: true, unique: true },
@@ -8,13 +8,12 @@ const Ask = new Schema({
     is_correct: { type: Number, required: true }
 });
 
-
 const Game = new Schema({
     name: { type: String, required: true, unique: true },
     description: { type: String, required: false },
-    level: { type: Types.ObjectId, ref: 'Level', required: true },
+    level: { type: SchemaTypes.ObjectId, ref: 'Level', required: true },
     points: { type: Number, required: true },
-    owner: { type: Types.ObjectId, ref: 'User' },
+    owner: { type: SchemaTypes.ObjectId, ref: 'User' },
     asks: [Ask],
 });
 

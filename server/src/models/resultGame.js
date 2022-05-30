@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const { Schema, Types } = mongoose;
+const { Schema, SchemaTypes, model } = mongoose;
 
 const Answer = new Schema({
     id: { type: Number, required: true },
@@ -7,11 +7,11 @@ const Answer = new Schema({
 })
 
 const ResultGame = new Schema({
-    game: { type: Types.ObjectId, ref: 'Game', required: true },
+    game: { type: SchemaTypes.ObjectId, ref: 'Game', required: true },
     answers: [Answer],
     date_until: { type: Date, required: false },
     date_from: { type: Date, required: true },
-    users: [{ type: Types.ObjectId, ref: 'User' }]
+    users: [{ type: SchemaTypes.ObjectId, ref: 'User' }]
 });
 
 

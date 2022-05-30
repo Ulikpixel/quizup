@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const { Schema, Types } = mongoose;
+const { Schema, Types, model } = mongoose;
 
 const Level = new Schema({
     name: { type: String, required: true, unique: true },
