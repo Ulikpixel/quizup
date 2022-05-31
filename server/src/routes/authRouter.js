@@ -8,7 +8,8 @@ router.post('/signup', [
     check('username', 'Имя пользователя не может быть пустым').notEmpty(),
     check('password', 'Пароль должен быть больше 4 и меньше 12 символов').isLength({ min: 4, max: 12 })
 ], controller.signup)
-router.post('/signin', controller.signin)
+router.put('/signin', controller.signin)
 router.get('/users', roleMiddleware(["ADMIN"]), controller.getUsers)
+router.get('/user/:id', roleMiddleware(["ADMIN"]), controller.getUser)
 
 export default router;
