@@ -6,15 +6,12 @@ import Level from '../models/level.js';
 
 const generateAccessToken = (id, roles) => jwt.sign({ id, roles }, process.env.SECRET_KEY, { expiresIn: "24h" });
 
-const getDataUser = async ({ _id: id, username, email = null, roles, result_games, owner_games, level, points }) => {
-    const currentLevel = await Level.find({ _id: level });
-    return { 
-        id, username, roles, result_games, points,
-        email: email || [],
-        level: currentLevel, 
-        ...(roles.includes('ADMIN') && { owner_games: owner_games || [] })
-    }
-}
+const getDataUser = async ({ _id: id, username, email = null, roles, result_games, owner_games, level, points }) => ({ 
+    id, username, roles, result_games, points,
+    email: email || [],
+    level, 
+    ...(roles.includes('ADMIN') && { owner_games: owner_games || [] })
+})
 
 class AuthController {
     async signup(req, res) {
@@ -43,7 +40,7 @@ class AuthController {
                 roles: ['USER'],
                 email: body?.email,
                 points: 0,
-                level: levelStart._id,
+                level: levelStart,
             });
             const { _id: id, username, roles, email, level } = user;
             const token = generateAccessToken(user._id, user.roles);
@@ -91,13 +88,13 @@ class AuthController {
     }
     async getUser(req, res) {
         try {
-            const user = await User.find({ _id: req.params.id });
+            const user = await User.findOne({ _id: req.params.id });
 
             if(!user) {
                 return res.status(400).json({ message: 'Пользователь не найден', data: null });
             }
 
-            const dataUser = await getDataUser(user[0]);
+            const dataUser = await getDataUser(user);
             res.json({ ...dataUser });
         } catch(e) {
             console.log(e);

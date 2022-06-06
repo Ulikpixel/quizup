@@ -3,15 +3,17 @@ const { Schema, SchemaTypes, model } = mongoose;
 
 const Answer = new Schema({
     id: { type: Number, required: true },
-    is_correct: { type: Boolean, required: true }
+    is_correct: { type: Boolean, required: true },
+    answer: { type: String, required: false }
 })
 
 const ResultGame = new Schema({
-    game: { type: SchemaTypes.ObjectId, ref: 'Game', required: true },
-    answers: [Answer],
+    date_from: { type: Date, default: new Date() },
     date_until: { type: Date, required: false },
-    date_from: { type: Date, required: true },
-    users: [{ type: SchemaTypes.ObjectId, ref: 'User' }]
+    game: { type: SchemaTypes.ObjectId, ref: 'Game', required: true },
+    user: { type: SchemaTypes.ObjectId, ref: 'User' },
+    status: { type: String, default: 'is_progress' },
+    answers_correct: [Answer]
 });
 
 

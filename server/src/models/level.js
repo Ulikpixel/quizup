@@ -4,7 +4,7 @@ const { Schema, Types, model } = mongoose;
 const Level = new Schema({
     name: { type: String, required: true, unique: true },
     img: { type: String, required: true, unique: true },
-    points: {
+    xp: {
         start_at: { type: Number, required: true },
         finish_at: { type: Number, required: true }, 
     },

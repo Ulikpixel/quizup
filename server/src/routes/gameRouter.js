@@ -1,22 +1,17 @@
 import Router from 'express';
 import { check } from 'express-validator';
 import controller from '../controlles/game.js';
-import roleMiddleware from '../middleware/role.js';
+import authMiddleware from '../middleware/auth.js';
 const router = new Router();
 
-router.post('/create_game',
-    roleMiddleware(["ADMIN"]),
+router.post('/start_game',
+    authMiddleware,
     [
-        check('name', 'Поле name не может быть пустым').notEmpty(),
-        check('level', 'Поле level не может быть пустым').notEmpty(),
-        check('points', 'Поле points не может быть пустым или строкой').notEmpty().isNumeric(),
-        check('asks', 'Количество вопросов должен быть больше 3 и меньше 60 символов').isLength({ min: 3, max: 60 }),
-        check('time', 'Поле time не может быть пустым или строкой').notEmpty().isNumeric(),
+        check('game', 'Поле game не может быть пустым').notEmpty()
     ],
-    controller.createGame
+    controller.startGame
 );
-router.put('/edit_game/:id', roleMiddleware(["ADMIN"]), controller.editGame);
-router.delete('/delete_game/:id', roleMiddleware(["ADMIN"]), controller.deleteGame);
-router.get('/games', roleMiddleware(["ADMIN"]), controller.getGames);
+router.put('/add_answer/:id', authMiddleware, controller.addAnswer);
+router.put('/finish_game/:id', authMiddleware, controller.finishGame);
 
 export default router;
