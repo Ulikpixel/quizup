@@ -3,7 +3,7 @@ import Level from '../models/level.js';
 
 const checkLevel = async ({ start_at, finish_at }, id) => {
     const levels = await Level.find();
-    const valids = [];  
+    const valids = [];
 
     levels.filter(el => el.id !== id).forEach(({ xp }) => {
         for (let i = xp.start_at; i <= xp.finish_at; i++) {
@@ -18,10 +18,9 @@ const checkLevel = async ({ start_at, finish_at }, id) => {
     return valids;
 }
 
-const checkName = async (name) => {
-    const candidate = await Level.findOne({ name });
-    return candidate
-}
+const checkName = async name => await Level.findOne({ name });
+
+const getLevel = ({ id, name, img, xp }) => ({ id, name, img, xp });
 
 class LevelController {
     async createLevel(req, res) {
@@ -30,87 +29,92 @@ class LevelController {
 
             if (!warning.isEmpty()) {
                 return res.status(400).json({
-                    message: "Ошибка при регистрации", errors: warning.errors.map(w => ({ field: w.param, text: w.msg }))
+                    message: "Ошибка при созданий вопроса", error: warning.errors.map(w => ({ field: w.param, text: w.msg }))
                 });
             }
 
             const { xp, name, img } = req.body;
             const candidate = await checkName(name);
 
-            if(candidate) {
-                return res.status(400).json({ message: 'Имя с таким названием уже существует', data: { name } });
+            if (candidate) {
+                return res.status(400).json({ message: 'Уровень с таким названием уже существует', error: { name } });
             }
 
             const valids = await checkLevel(xp);
 
             if (valids.length !== 0) {
-                return res.status(400).json({ message: "start_at и finish_at совпадают существующим промежутком" });
+                return res.status(400).json({ message: "start_at и finish_at совпадают существующим промежутком", error: null });
             }
 
             const level = await Level.create({ name, img, xp });
 
-            res.json({ level });
+            res.json({ ...getLevel(level) });
         } catch (e) {
+            res.status(400).json({ message: "Ошибка при созданий вопроса", error: null });
             console.log(e)
         }
     }
     async editLevel(req, res) {
         try {
+            const warning = validationResult(req);
+
+            if (!warning.isEmpty()) {
+                return res.status(400).json({
+                    message: "Ошибка при редактирований вопроса", error: warning.errors.map(w => ({ field: w.param, text: w.msg }))
+                });
+            }
+
             const id = req.params.id;
             const { name, img, xp } = req.body;
-            const valids = (xp?.start_at && xp?.finish_at) ? await checkLevel(xp, id) : [];
+            const currentLevel = await Level.findOne({ _id: id });
+
+            if (!currentLevel) {
+                return res.status(400).json({ message: 'Такого уровня не существует', error: { level_id: id } });
+            }
+
+            const valids = xp ? await checkLevel(xp, id) : [];
 
             if (valids.length !== 0) {
-                return res.status(400).json({ message: "start_at и finish_at совпадают существующим промежутком" });
+                return res.status(400).json({ message: "start_at и finish_at совпадают существующим промежутком", error: null });
             }
 
-            const candidate = await checkName(name);
+            if (name) {
+                const candidate = await checkName(name);
 
-            if(candidate) {
-                return res.status(400).json({ message: 'Имя с таким названием уже существует', data: { name } });
+                if (candidate) {
+                    return res.status(400).json({ message: 'Имя с таким названием уже существует', error: { name } });
+                }
             }
 
-            Level.findOneAndUpdate({ _id: id }, { name, img, xp }, { new: true })
-                .then(data => {
-                    res.json({ data })
-                })
-                .catch(() => {
-                    res.status(400).json({ message: 'Такого уровня не существует', data: { level_id: id } });
-                })
+            const newLevel = await Level.findOneAndUpdate({ _id: id }, { name, img, xp }, { new: true });
+            res.json({ ...getLevel(newLevel) })
         } catch (e) {
+            res.status(400).json({ message: "Ошибка при редактирований вопроса", error: null });
             console.log(e)
         }
     }
-    async deleteLevel(req, res) {
+    deleteLevel(req, res) {
         try {
             const id = req.params.id;
 
-            Level.findOneAndDelete({ _id: id }, (err, data) => {
-                if (err) {
-                    return res.status(400).json({ message: 'Такого уровня не существует', data: { level_id: id } })
-                }
-                res.json({ level: data })
-            });
+            Level.findOneAndDelete({ _id: id })
+                .then(data => res.json({ ...getLevel(data) }))
+                .catch(() => res.status(400).json({ message: 'Такого уровня не существует', error: { level_id: id } }))
         } catch (e) {
             console.log(e)
         }
     }
-    async getLevels(req, res) {
+    getLevels(req, res) {
         try {
-            const { level_id, name } = req.query;
-            let query = {};
+            const { level_id, q } = req.query;
+            const params = [
+                (level_id && { _id: level_id }),
+                (q && { name: new RegExp(q, 'i') })
+            ].filter(el => el);
 
-            if(level_id || name) {
-                query = { $or: [(level_id && { _id: level_id }), (name && { name })].filter(el => el) }
-            }
-
-            Level.findOne(query)
-                .then(data => {
-                    res.json({ data })
-                })
-                .catch(() => {
-                    res.status(400).json({ message: 'Такой уровень не найден', data: { query: req.query } });
-                })
+            Level.find(params.length > 0 ? { $or: params } : {})
+                .then(data => res.json({ list: data.map(el => getLevel(el)) }))
+                .catch(() => res.status(400).json({ message: 'Такой уровень не найден', error: { query: req.query } }))
         } catch (e) {
             console.log(e)
         }

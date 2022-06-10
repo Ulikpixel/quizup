@@ -3,11 +3,10 @@ import { check } from 'express-validator';
 import controller from '../controlles/level.js';
 import roleMiddleWare from '../middleware/role.js';
 import authMiddleware from '../middleware/auth.js';
-import Level from '../models/level.js';
 const router = new Router();
 
 router.post('/create_level', 
-    roleMiddleWare(["ADMIN"]), 
+    roleMiddleWare(["ADMIN", "GLOBAL_ADMIN"]), 
     [
         check('name', 'поле name не может быть пустым').notEmpty(),
         check('img', 'поле img не может быть пустым').notEmpty(),
@@ -17,8 +16,11 @@ router.post('/create_level',
     ],
     controller.createLevel
 );
-router.put('/edit_level/:id', roleMiddleWare(["ADMIN"]), controller.editLevel);
-router.delete('/delete_level/:id', roleMiddleWare(["ADMIN"]), controller.deleteLevel);
+router.put('/edit_level/:id', 
+    roleMiddleWare(["ADMIN", "GLOBAL_ADMIN"]),
+    controller.editLevel
+);
+router.delete('/delete_level/:id', roleMiddleWare(["ADMIN", "GLOBAL_ADMIN"]), controller.deleteLevel);
 router.get('/levels', authMiddleware, controller.getLevels);
 
 export default router;

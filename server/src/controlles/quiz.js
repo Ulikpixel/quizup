@@ -1,4 +1,4 @@
-import Game from '../models/game.js';
+import Quiz from '../models/quiz.js';
 import Level from '../models/level.js';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
@@ -10,66 +10,67 @@ class QuizController {
 
             if (!warning.isEmpty()) {
                 return res.status(400).json({
-                    message: "Ошибка при созданий викторины", errors: warning.errors.map(w => ({ field: w.param, text: w.msg }))
+                    message: "Ошибка при созданий викторины", error: warning.errors.map(w => ({ field: w.param, text: w.msg }))
                 });
             }
 
             const { name, level } = req.body;
 
-            const candidateOne = await Game.findOne({ $and: [{ level }, { name }] });
-            const candidateTwo = await Game.findOne({ name });
+            const candidate = await Quiz.findOne({ $and: [{ level }, { name }] });
 
-            if(candidateOne) {
-                return res.status(400).json({ message: 'Викторина с таким именем и уровнем существует', data: null })
+            if (candidate) {
+                return res.status(400).json({ message: 'Викторина с таким именем и уровнем существует', error: null })
             }
-            if(candidateTwo) {
-                return res.status(400).json({ message: 'Викторина с таким именем существует', data: null })
-            }
-            
+
             const currentLevel = await Level.findOne({ _id: level });
 
-            if(!currentLevel) {
-                return res.status(400).json({ message: 'Такой уровень не существует', data: null })
+            if (!currentLevel) {
+                return res.status(400).json({ message: 'Такой уровень не существует', error: { level_id: level } });
             }
 
             const token = req.headers.authorization.split(' ')[1]
             const { id: userId } = jwt.verify(token, process.env.SECRET_KEY);
-            const gameBody = { ...req.body, owner: userId, asks: req.body.asks.map((el, idx) => ({ ...el, id: idx + 1 })) };
+            const QuizBody = { ...req.body, owner: userId, asks: req.body.asks.map((el, idx) => ({ ...el, id: idx + 1 })) };
 
-            const game = await Game.create({ ...gameBody });
+            const quiz = await Quiz.create({ ...QuizBody });
 
-            res.json({ id: game._id, ...gameBody });
+            res.json({ id: quiz._id, ...QuizBody });
         } catch (e) {
+            res.status(400).json({ message: 'Ошибка при созданий викторины', error: { level_id: level } });
             console.log(e)
         }
     }
     async editQuiz(req, res) {
         try {
 
-        } catch(e) {    
+        } catch (e) {
             console.log(e);
         }
     }
-    async deleteQuiz(req, res) {
+    deleteQuiz(req, res) {
         try {
-            const _id = req.params.id;
-            const candidate = await Game.findOne({ _id });
-    
-            if(!candidate) {
-                return res.status(400).json({ message: `Викторина с таким "${_id}" айдишником не существует`, data: null })
-            }
-    
-            await Game.deleteOne({ _id });
-            res.json({ message: 'Викторина успешно удалена', data: { id: _id, name: candidate.name } });
-        } catch(e) {
+            const id = req.params.id;
+
+            Quiz.findOneAndDelete({ _id: id })
+                .then(({ data }) => res.json({ data }))
+                .catch(() => res.status(400).json({ message: 'Такой викторины не существует', error: { quiz_id: id } }))
+        } catch (e) {
             console.log(e);
         }
     }
-    async getQuiz(req, res) {
+    async getQuizzes(req, res) {
         try {
-            const games = await Game.find();
-            res.json({ games });
-        } catch(e) {
+            const { q, level, owner } = req.query;
+            const params = [
+                (q && { name: new RegExp(q, 'i') }),
+                (level && { level }),
+                (owner && { owner })
+            ].filter(el => el);
+
+
+            const Quizzes = await Quiz.find(params.length > 0 ? { $and: params } : {});
+            res.json({ list: Quizzes });
+        } catch (e) {
             console.log(e);
         }
     }

@@ -1,7 +1,7 @@
 import Router from 'express';
 import { check } from 'express-validator';
 import controller from '../controlles/auth.js';
-import roleMiddleware from '../middleware/role.js';
+import authMiddleWare from '../middleware/auth.js';
 const router = new Router();
 
 router.post('/signup', [
@@ -9,7 +9,6 @@ router.post('/signup', [
     check('password', 'Пароль должен быть больше 4 и меньше 12 символов').isLength({ min: 4, max: 12 })
 ], controller.signup)
 router.put('/signin', controller.signin)
-router.get('/users', roleMiddleware(["ADMIN"]), controller.getUsers)
-router.get('/user/:id', roleMiddleware(["ADMIN"]), controller.getUser)
+router.get('/users', authMiddleWare, controller.getUsers)
 
 export default router;
