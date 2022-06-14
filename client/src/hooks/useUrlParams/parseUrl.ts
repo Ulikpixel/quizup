@@ -1,0 +1,2 @@
+export const parseUrl = (url: string): any => JSON.parse('{"' + decodeURI(url).replace(/"/g, '\\"').replace(/&/g, '","').replace(/=/g, '":"') + '"}');
+// функция парсить query params в объект. Пример: ?company=1&location=1 --> { company: 1, location: 1 }.
